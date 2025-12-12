@@ -3,6 +3,7 @@
 
 import sys
 import traceback
+from src.logger import logging
 
 
 def error_message_detail(error: Exception, error_detail) -> str:
@@ -21,7 +22,7 @@ def error_message_detail(error: Exception, error_detail) -> str:
         f"at line number: [{lineno}] "
         f"with error message: [{str(error)}]"
     )
-
+    logging.info(error_message)
     return error_message
 
 
