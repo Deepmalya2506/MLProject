@@ -1,0 +1,7 @@
+[project]
+name = "ml-end2end"
+version = "0.1.0"
+description = "This is a Project about end2end Machine Learning Project"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
