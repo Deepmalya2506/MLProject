@@ -1,8 +1,11 @@
 pandas
 numpy
 seaborn
-scikit-learn
 matplotlib
+
+scikit-learn
 catboost
 xgboost
--e .    #-e.means besides making it a package make it editable..No matter where I run the script from, treat src/ as a top-level importable package.
+
+dill # Python library that can serialize and save almost any Python object to a file inlcuding Pipelines, scaler, encoder etc.
+# -e .    #-e.means besides making it a package make it editable..No matter where I run the script from, treat src/ as a top-level importable package.
