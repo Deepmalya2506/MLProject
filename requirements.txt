@@ -5,3 +5,4 @@ scikit-learn
 matplotlib
 catboost
 xgboost
+-e .    #-e.means besides making it a package make it editable..No matter where I run the script from, treat src/ as a top-level importable package.
