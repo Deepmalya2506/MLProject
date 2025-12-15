@@ -74,8 +74,7 @@ class DataTransformation:
             logging.info("CSV Data succesfully loaded as dataframe")
 
             logging.info("Preprocessing object...")
-            prerprocessor_obj=DataTransformation()
-
+  
             target_col='math_score'
 
             # splitting the train_data & test_data we loaded into x and y so that we can separate out the training (independent) & target(target) variable
@@ -85,18 +84,30 @@ class DataTransformation:
             test_x=test_df.drop(target_col,axis=1) # x data used for testing
             test_y=test_df[target_col] # y or results used for evaluating model's perfromance
 
-            preprocessor=self.preprocessor() # object of the preprocessor class
+            preprocessor=self.preprocessor() # object of the DataTransformation class and preprocessor function 
             logging.info("Applying preprocessor on training data")
 
             train_x_transformed=preprocessor.fit_transform(train_x) # preprocesisng training data 
             test_x_transformeed=preprocessor.transform(test_x)  # preprocesisng testing data 
 
+            train_arr = np.c_[train_x_transformed, np.array(train_y)]
+            test_arr = np.c_[test_x_transformeed, np.array(test_y)]
+
             logging.info("Data transformation completed successfully.")
 
+            logging.info(f"Saved preprocessing object.")
             save_object(
                 file_path=self.data_transformation_config.preprocessor_obj_file, 
                 obj=preprocessor # saves the preprocessor object as a file.pkl and serializes everything using dill(specified in utils)
             )
 
-        except:
-            pass
+            return (
+                train_x_transformed,
+                test_x_transformeed,
+                train_y,
+                test_y,
+                self.data_transformation_config.preprocessor_obj_file # path to the model.pkl that stores all these objects in the artifacts folder
+            )
+
+        except Exception as e:
+            raise CustomException(e,sys)
