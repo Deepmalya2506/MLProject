@@ -29,7 +29,18 @@ class DataTransformation:
         try:
             ordinal_features = ['parental_level_of_education']
             nominal_features = ['gender', 'race_ethnicity', 'lunch', 'test_preparation_course']
-            numerical_features=['maths_score','writing_score','reading_score']
+            numerical_features=['writing_score','reading_score'] # math_score is ot considered since it is the target variable
+
+            education_order = [
+            "some high school",
+            "high school",
+            "some college",
+            "associate's degree",
+            "bachelor's degree",
+            "master's degree"
+        ]
+
+
 
             numerical_pipeline=Pipeline(
                 steps=[
@@ -39,14 +50,12 @@ class DataTransformation:
         
             cat_ord_pipeline=Pipeline(
                 steps=[
-                    ('normalizer',Normalizer()),
-                    ('ordinal',OrdinalEncoder()),
+                    ('ordinal',OrdinalEncoder(categories=[education_order]))
                 ]
             )
             cat_nom_pipeline=Pipeline(
                 steps=[
-                    ('normalizer',Normalizer()),
-                    ('nominal',OneHotEncoder())
+                    ('nominal',OneHotEncoder(handle_unknown='ignore'))
                 ]
             )
 
@@ -84,29 +93,25 @@ class DataTransformation:
             test_x=test_df.drop(target_col,axis=1) # x data used for testing
             test_y=test_df[target_col] # y or results used for evaluating model's perfromance
 
-            preprocessor=self.preprocessor() # object of the DataTransformation class and preprocessor function 
+            preprocess=self.preprocessor() # object of the DataTransformation class and preprocessor function 
             logging.info("Applying preprocessor on training data")
 
-            train_x_transformed=preprocessor.fit_transform(train_x) # preprocesisng training data 
-            test_x_transformeed=preprocessor.transform(test_x)  # preprocesisng testing data 
-
-            train_arr = np.c_[train_x_transformed, np.array(train_y)]
-            test_arr = np.c_[test_x_transformeed, np.array(test_y)]
+            train_x_transformed=preprocess.fit_transform(train_x) # preprocessing training data 
+            test_x_transformed=preprocess.transform(test_x)  # preprocessing testing data 
 
             logging.info("Data transformation completed successfully.")
 
             logging.info(f"Saved preprocessing object.")
             save_object(
                 file_path=self.data_transformation_config.preprocessor_obj_file, 
-                obj=preprocessor # saves the preprocessor object as a file.pkl and serializes everything using dill(specified in utils)
+                obj=preprocess # saves the preprocessor object as a file.pkl and serializes everything using dill(specified in utils)
             )
 
             return (
                 train_x_transformed,
-                test_x_transformeed,
+                test_x_transformed,
                 train_y,
                 test_y,
-                self.data_transformation_config.preprocessor_obj_file # path to the model.pkl that stores all these objects in the artifacts folder
             )
 
         except Exception as e:

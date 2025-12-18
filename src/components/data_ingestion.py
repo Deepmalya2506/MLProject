@@ -21,7 +21,7 @@ class DataIngestion:
     def initiate_data_ingestion(self):
         logging.info("Entered the data Ingestion Section...")
         try:
-            df=pd.read_csv(r'C:\Users\DEEPMALYA\OneDrive\Desktop\pip_Malya\Python\ML\ML_End2End\notebooks\data\stud.csv')
+            df=pd.read_csv(r'notebooks\data\stud.csv')
             logging.info("Read datasets as dataframe.")
 
             os.makedirs(os.path.dirname(self.ingestion_config.raw_data_path),exist_ok=True) # creates folder only if it doesn’t exist.
@@ -36,8 +36,9 @@ class DataIngestion:
 
             logging.info("Ingestion of data completed")
 
-            return self.ingestion_config.train_data_path, self.ingestion_config.test_data_path, self.ingestion_config.raw_data_path
+            return self.ingestion_config.train_data_path, self.ingestion_config.test_data_path
 
         except Exception as e:
             raise CustomException(e,sys)
         
+

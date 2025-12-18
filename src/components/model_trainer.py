@@ -2,7 +2,6 @@ import os
 import sys
 from dataclasses import dataclass
 
-from catboost import CatBoostRegressor
 from sklearn.ensemble import (
     AdaBoostRegressor,
     GradientBoostingRegressor,
@@ -30,43 +29,89 @@ class ModelTrainer:
     def __init__(self):
         self.model_trainer_config=ModelTrainerConfig() # creating an object of the config class to access it
     
-    def initiate_training(self,transformed_train_x,transformed_test_x,train_y,test_y,preprocessor_path):
+    def initiate_training(self, transformed_train_x, transformed_test_x, train_y, test_y):
         try:
             logging.info("Testing with different models...")
+
             models = {
                 "Random Forest": RandomForestRegressor(),
                 "Decision Tree": DecisionTreeRegressor(),
                 "Gradient Boosting": GradientBoostingRegressor(),
                 "Linear Regression": LinearRegression(),
-                "XGBRegressor": XGBRegressor(),
-                "CatBoosting Regressor": CatBoostRegressor(verbose=False),
+                "XGBRegressor": XGBRegressor(verbosity=0),
                 "AdaBoost Regressor": AdaBoostRegressor(),
             }
 
-            model_report=evaluate_model(transformed_train_x,train_y,transformed_test_x,test_y,models) 
-            # evaluate function is defined in the utils as a helper function 
-            # The function returns a report of the performance of the list of models for test_data
+            # For hyperparameter tuning we are uisng GridSearchCV that not only finds the best model, but also selects th best parameter for optimization
+            params={
+                "Decision Tree": {
+                    'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                    # 'splitter':['best','random'],
+                    # 'max_features':['sqrt','log2'],
+                },
+                "Random Forest":{
+                    # 'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                 
+                    # 'max_features':['sqrt','log2',None],
+                    'n_estimators': [8,16,32,64,128,256]
+                },
+                "Gradient Boosting":{
+                    # 'loss':['squared_error', 'huber', 'absolute_error', 'quantile'],
+                    'learning_rate':[.1,.01,.05,.001],
+                    'subsample':[0.6,0.7,0.75,0.8,0.85,0.9],
+                    # 'criterion':['squared_error', 'friedman_mse'],
+                    # 'max_features':['auto','sqrt','log2'],
+                    'n_estimators': [8,16,32,64,128,256]
+                },
+                "Linear Regression":{},
+                "XGBRegressor":{
+                    'learning_rate':[.1,.01,.05,.001],
+                    'n_estimators': [8,16,32,64,128,256]
+                },
+                "AdaBoost Regressor":{
+                    'learning_rate':[.1,.01,0.5,.001],
+                    # 'loss':['linear','square','exponential'],
+                    'n_estimators': [8,16,32,64,128,256]
+                }
+                
+            }
 
-            # To get best_score model form the report
-            best_model_score:float=max(sorted(model_report.values()))
+            # Evaluate all models
+            model_report:dict = evaluate_model(
+                transformed_train_x, train_y,
+                transformed_test_x, test_y,
+                models,
+                param=params
+            )
 
-            # To get best model form the report dict
-            best_model_name:str=list(model_report.keys())[list(model_report.values()).index(best_model_score)]
-            best_model=models[best_model_name]
+            # Best model score
+            best_model_score = max(model_report.values())
 
-            if(best_model_score<0.6):
+            # Best model name
+            best_model_name = next(model_name for model_name,model_score in model_report.items() if model_score==best_model_score)
+
+            best_model = models[best_model_name]
+
+            if best_model_score < 0.6:
                 logging.error("No Best Model found")
-            else:
-                logging.info("Best Model Found")
+                return None
 
-                save_object(file_path=self.model_trainer_config,obj= best_model)
+            logging.info(f"Best Model Found: {best_model_name} with score {best_model_score}")
 
-                predicted=best_model.predict(transformed_test_x)
-                r2score=r2_score(predicted,test_y)
+            # Save the best model
+            save_object(
+                file_path=self.model_trainer_config.trained_model_file,
+                obj=best_model
+            )
 
-                logging.info(f"Best Model accuray score came out to be(on test data):{r2score}")
+            # Evaluate best model on test data
+            predicted = best_model.predict(transformed_test_x)
+            final_r2 = r2_score(test_y, predicted)
 
-                return r2score
+            logging.info(f"Best Model Found: {best_model_name} with score {best_model_score}")
 
+            return final_r2
+        
         except Exception as e:
-            raise CustomException(e,sys)
+            raise CustomException(e, sys)
+

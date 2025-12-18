@@ -8,6 +8,7 @@ import pandas as pd
 from src.exception import CustomException
 
 from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
 
 import dill
 
@@ -22,24 +23,31 @@ def save_object(file_path, obj):
     except Exception as e:
         raise CustomException(e, sys)
 
-def evaluate_model(X_train_data,y_train_data,x_test_data,y_test_data,models):
+def evaluate_model(X_train_data,y_train_data,x_test_data,y_test_data,models,param):
     
     try:
         report={}
 
-        for i in range(len(list(models))):
-            model=list(models.values())[i] # from the dictionary of models with their objects first select one model, then take its value i.e object
+        for i in range(len(list(models))): # returns a key-value pair of items form the dictionary 
+
+            model=list(models.values())[i]
+            para=param[list(models.keys())[i]]
+
+            gs = GridSearchCV(model,para,cv=3)
+            gs.fit(X_train_data,y_train_data)
+
+            model.set_params(**gs.best_params_)
             model.fit(X_train_data,y_train_data)
 
-            y_train_pred=model.predict(X_train_data) # prediction during training
-            y_test_pred=model.predict(x_test_data)   # prediction during testing
+            # performance prediction on testing data 
+            y_test_pred = model.predict(x_test_data)  
 
-            train_model_score=r2_score(y_train_pred,y_train_data) # accuracy during training
-            test_model_score=r2_score(y_test_pred,y_test_data)    # accuraxy with test data
+            # test performance evaluation
+            test_model_score = r2_score(y_test_data, y_test_pred)
 
-            report[list(models.keys()[i])]=test_model_score
+            report[list(models.keys())[i]] = test_model_score
 
-            return report
+        return report
 
     except Exception as e:
         raise CustomException(e,sys)
